@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StudentHub — By Mahnoor Shaikh</title>
+<style>
+  :root{
+    --bg:#0f1226;
+    --bg-2:#1a1d3a;
+    --card:#1e2142;
+    --text:#eef1ff;
+    --muted:#9aa0c7;
+    --primary:#7c5cff;
+    --primary-2:#00d4ff;
+    --accent:#ff6b9d;
+    --success:#22c55e;
+    --warn:#f59e0b;
+    --danger:#ef4444;
+    --border:rgba(255,255,255,0.08);
+    --shadow:0 10px 30px rgba(0,0,0,0.35);
+  }
+  [data-theme="light"]{
+    --bg:#f4f6ff;
+    --bg-2:#ffffff;
+    --card:#ffffff;
+    --text:#1a1d3a;
+    --muted:#5b6080;
+    --border:rgba(0,0,0,0.08);
+    --shadow:0 10px 30px rgba(30,33,66,0.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    background:linear-gradient(135deg,var(--bg) 0%,var(--bg-2) 100%);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+    transition:background .3s,color .3s;
+  }
+
+  /* ===== WATERMARK ===== */
+  .watermark{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:1;
+    overflow:hidden;
+    opacity:.08;
+  }
+  .watermark::before{
+    content:"";
+    position:absolute;
+    inset:-50%;
+    background-image:
+      repeating-linear-gradient(
+        -35deg,
+        transparent 0 120px,
+        rgba(124,92,255,0.25) 120px 121px
+      );
+    animation:drift 60s linear infinite;
+  }
+  .watermark-text{
+    position:absolute;
+    inset:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='180'><g transform='rotate(-25 210 90)'><text x='50%25' y='45%25' font-family='Segoe UI,Arial' font-size='22' font-weight='700' fill='%237c5cff' text-anchor='middle'>MAHNOOR SHAIKH</text><text x='50%25' y='70%25' font-family='Segoe UI,Arial' font-size='14' font-weight='500' fill='%2300d4ff' text-anchor='middle'>DEP: IT — Information Technology</text></g></svg>");
+    background-size:420px 180px;
+    background-repeat:repeat;
+    transform:rotate(-25deg) scale(1.5);
+  }
+  @keyframes drift{
+    from{transform:translate(0,0)}
+    to{transform:translate(120px,120px)}
+  }
+
+  /* ===== LAYOUT ===== */
+  .app{
+    display:grid;
+    grid-template-columns:260px 1fr;
+    min-height:100vh;
+    position:relative;
+    z-index:2;
+  }
+  .sidebar{
+    background:rgba(30,33,66,0.6);
+    backdrop-filter:blur(14px);
+    border-right:1px solid var(--border);
+    padding:24px 16px;
+    position:sticky;
+    top:0;
+    height:100vh;
+    overflow-y:auto;
+    transition:transform .3s;
+  }
+  [data-theme="light"] .sidebar{background:rgba(255,255,255,0.7)}
+  .brand{
+    display:flex;align-items:center;gap:10px;
+    padding:6px 10px 22px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:16px;
+  }
+  .brand-logo{
+    width:40px;height:40px;border-radius:10px;
+    background:linear-gradient(135deg,var(--primary),var(--primary-2));
+    display:grid;place-items:center;font-weight:800;color:#fff;
+    box-shadow:0 6px 20px rgba(124,92,255,0.4);
+  }
+  .brand h1{font-size:18px;letter-spacing:.3px}
+  .brand small{color:var(--muted);font-size:11px;display:block}
+
+  .nav{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  .nav button{
+    display:flex;align-items:center;gap:12px;
+    background:transparent;border:none;color:var(--text);
+    padding:12px 14px;border-radius:10px;cursor:pointer;
+    font-size:14px;text-align:left;transition:all .2s;
+  }
+  .nav button:hover{background:rgba(124,92,255,0.12)}
+  .nav button.active{
+    background:linear-gradient(135deg,rgba(124,92,255,0.25),rgba(0,212,255,0.15));
+    color:#fff;
+    box-shadow:inset 0 0 0 1px rgba(124,92,255,0.4);
+  }
+  .nav .ico{font-size:18px}
+
+  .main{padding:24px 28px 80px;max-width:100%}
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:24px;gap:12px;flex-wrap:wrap;
+  }
+  .topbar h2{font-size:26px;font-weight:700}
+  .topbar .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .top-actions{display:flex;gap:10px;align-items:center}
+  .icon-btn{
+    width:40px;height:40px;border-radius:10px;border:1px solid var(--border);
+    background:var(--card);color:var(--text);cursor:pointer;font-size:16px;
+    display:grid;place-items:center;transition:all .2s;
+  }
+  .icon-btn:hover{transform:translateY(-2px);border-color:var(--primary)}
+  .menu-btn{display:none}
+
+  /* ===== CARDS / SECTIONS ===== */
+  .section{display:none;animation:fade .35s ease}
+  .section.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .grid{display:grid;gap:18px}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    transition:transform .25s,box-shadow .25s;
+  }
+  .card:hover{transform:translateY(-3px)}
+  .card h3{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--primary)}
+
+  .stat{
+    display:flex;flex-direction:column;gap:4px;
+  }
+  .stat .val{font-size:28px;font-weight:700;
+    background:linear-gradient(135deg,var(--primary),var(--primary-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .stat .lbl{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.8px}
+
+  /* Inputs */
+  input,select,textarea,button.btn{
+    width:100%;padding:11px 14px;border-radius:10px;
+    background:var(--bg-2);color:var(--text);
+    border:1px solid var(--border);font-size:14px;
+    font-family:inherit;transition:border-color .2s,box-shadow .2s;
+  }
+  input:focus,select:focus,textarea:focus{
+    outline:none;border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(124,92,255,0.18);
+  }
+  textarea{resize:vertical;min-height:100px}
+  .btn{
+    cursor:pointer;border:none;font-weight:600;
+    background:linear-gradient(135deg,var(--primary),var(--primary-2));
+    color:#fff;padding:11px 18px;border-radius:10px;
+    transition:transform .2s,box-shadow .2s;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(124,92,255,0.35)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+  .btn.danger{background:linear-gradient(135deg,var(--danger),#b91c1c)}
+  .btn.sm{padding:7px 12px;font-size:12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row > *{flex:1;min-width:0}
+  label{font-size:12px;color:var(--muted);margin-bottom:6px;display:block}
+
+  /* Pomodoro */
+  .pomo-ring{
+    width:240px;height:240px;margin:10px auto;
+    border-radius:50%;
+    background:conic-gradient(var(--primary) var(--p,100%),rgba(255,255,255,0.08) 0);
+    display:grid;place-items:center;
+    position:relative;
+  }
+  .pomo-ring::before{
+    content:"";position:absolute;inset:12px;border-radius:50%;
+    background:var(--card);
+  }
+  .pomo-time{
+    position:relative;z-index:2;font-size:44px;font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .pomo-mode{position:relative;z-index:2;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:2px}
+  .pomo-controls{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+
+  /* Assignments */
+  .task{
+    display:flex;align-items:center;gap:12px;
+    padding:12px;border-radius:10px;
+    background:var(--bg-2);margin-bottom:8px;
+    border:1px solid var(--border);
+    transition:all .2s;
+  }
+  .task.done{opacity:.55}
+  .task.done .t-title{text-decoration:line-through}
+  .task input[type=checkbox]{width:20px;height:20px;accent-color:var(--primary);flex:none}
+  .t-info{flex:1;min-width:0}
+  .t-title{font-weight:600;font-size:14px;word-break:break-word}
+  .t-meta{font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+  .t-meta .urgent{color:var(--danger);font-weight:600}
+  .t-del{background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:16px;padding:6px}
+
+  /* Notes */
+  .note{
+    background:var(--bg-2);border:1px solid var(--border);
+    padding:14px;border-radius:12px;margin-bottom:10px;
+    position:relative;
+  }
+  .note h4{font-size:14px;margin-bottom:6px}
+  .note p{font-size:13px;color:var(--muted);white-space:pre-wrap;word-break:break-word}
+  .note .meta{font-size:11px;color:var(--muted);margin-top:8px}
+  .note .x{position:absolute;top:8px;right:8px;background:transparent;border:none;color:var(--danger);cursor:pointer}
+
+  /* Timetable */
+  .tt-grid{display:grid;grid-template-columns:80px repeat(5,1fr);gap:6px;font-size:12px}
+  .tt-cell{
+    background:var(--bg-2);border:1px solid var(--border);
+    padding:8px;border-radius:8px;min-height:50px;
+    text-align:center;display:flex;flex-direction:column;justify-content:center;
+  }
+  .tt-head{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;font-weight:700}
+  .tt-time{background:var(--card);font-weight:600;color:var(--muted)}
+  .tt-cell input{
+    background:transparent;border:none;text-align:center;font-size:11px;padding:2px;
+    color:var(--text);
+  }
+  .tt-cell input:focus{background:rgba(124,92,255,0.1)}
+
+  /* GPA table */
+  .gpa-row{display:grid;grid-template-columns:2fr 1fr 1fr 40px;gap:8px;margin-bottom:8px;align-items:center}
+  .gpa-row input,.gpa-row select{padding:9px 10px;font-size:13px}
+  .gpa-row .rm{background:transparent;border:none;color:var(--danger);cursor:pointer;font-size:18px}
+  .gpa-result{
+    margin-top:16px;padding:16px;border-radius:12px;
+    background:linear-gradient(135deg,rgba(124,92,255,0.15),rgba(0,212,255,0.1));
+    border:1px solid rgba(124,92,255,0.3);
+    text-align:center;
+  }
+  .gpa-result .big{font-size:36px;font-weight:800;
+    background:linear-gradient(135deg,var(--primary),var(--primary-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+
+  /* Mobile */
+  @media (max-width: 900px){
+    .grid-3{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (max-width: 720px){
+    .app{grid-template-columns:1fr}
+    .sidebar{
+      position:fixed;left:0;top:0;width:260px;z-index:50;
+      transform:translateX(-100%);
+      box-shadow:var(--shadow);
+    }
+    .sidebar.open{transform:translateX(0)}
+    .menu-btn{display:grid}
+    .main{padding:18px 16px 80px}
+    .grid-3,.grid-2{grid-template-columns:1fr}
+    .tt-grid{font-size:10px;grid-template-columns:60px repeat(5,1fr)}
+    .gpa-row{grid-template-columns:1fr 1fr}
+    .gpa-row .rm{grid-column:span 2;justify-self:end}
+    .topbar h2{font-size:20px}
+  }
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:40;
+  }
+  .overlay.show{display:block}
+
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(124,92,255,0.3);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- WATERMARK -->
+<div class="watermark" aria-hidden="true">
+  <div class="watermark-text"></div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-logo">S</div>
+      <div>
+        <h1>StudentHub</h1>
+        <small>by Mahnoor Shaikh • IT</small>
+      </div>
+    </div>
+    <nav class="nav">
+      <button data-sec="dashboard" class="active"><span class="ico">🏠</span> Dashboard</button>
+      <button data-sec="pomo"><span class="ico">⏱️</span> Pomodoro Timer</button>
+      <button data-sec="tasks"><span class="ico">📝</span> Assignments</button>
+      <button data-sec="notes"><span class="ico">🗒️</span> Quick Notes</button>
+      <button data-sec="gpa"><span class="ico">🎓</span> GPA Calculator</button>
+      <button data-sec="tt"><span class="ico">📅</span> Timetable</button>
+    </nav>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="icon-btn menu-btn" id="menuBtn">☰</button>
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <div class="sub" id="pageDate"></div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <section class="section active" id="dashboard">
+      <div class="grid grid-3">
+        <div class="card stat">
+          <span class="lbl">Pending Tasks</span>
+          <span class="val" id="stTasks">0</span>
+        </div>
+        <div class="card stat">
+          <span class="lbl">Notes Saved</span>
+          <span class="val" id="stNotes">0</span>
+        </div>
+        <div class="card stat">
+          <span class="lbl">Current GPA</span>
+          <span class="val" id="stGpa">—</span>
+        </div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:18px">
+        <div class="card">
+          <h3><span class="dot"></span> Upcoming Deadlines</h3>
+          <div id="upcomingList"><p style="color:var(--muted);font-size:13px">No tasks yet. Add one in Assignments.</p></div>
+        </div>
+        <div class="card">
+          <h3><span class="dot" style="background:var(--accent)"></span> Quick Tip</h3>
+          <p id="tipText" style="font-size:14px;line-height:1.6;color:var(--muted)"></p>
+          <button class="btn ghost sm" style="margin-top:12px" id="newTip">New Tip</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- POMODORO -->
+    <section class="section" id="pomo">
+      <div class="card" style="max-width:480px;margin:0 auto;text-align:center">
+        <h3><span class="dot"></span> Focus Timer</h3>
+        <div class="pomo-mode" id="pomoMode">Focus</div>
+        <div class="pomo-ring" id="pomoRing" style="--p:100%">
+          <div class="pomo-time" id="pomoTime">25:00</div>
+        </div>
+        <div class="pomo-controls">
+          <button class="btn" id="pomoStart">Start</button>
+          <button class="btn ghost" id="pomoReset">Reset</button>
+        </div>
+        <div class="row" style="margin-top:18px">
+          <div>
+            <label>Focus (min)</label>
+            <input type="number" id="pomoFocus" value="25" min="1" max="120"/>
+          </div>
+          <div>
+            <label>Break (min)</label>
+            <input type="number" id="pomoBreak" value="5" min="1" max="60"/>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TASKS -->
+    <section class="section" id="tasks">
+      <div class="card">
+        <h3><span class="dot"></span> Add Assignment</h3>
+        <div class="row">
+          <div style="flex:2">
+            <label>Title</label>
+            <input type="text" id="tTitle" placeholder="e.g. Data Structures Lab Report"/>
+          </div>
+          <div>
+            <label>Subject</label>
+            <input type="text" id="tSubj" placeholder="e.g. DSA"/>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div>
+            <label>Due Date</label>
+            <input type="date" id="tDate"/>
+          </div>
+          <div>
+            <label>Priority</label>
+            <select id="tPri">
+              <option value="low">Low</option>
+              <option value="med" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn" id="tAdd">+ Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px">
+        <h3><span class="dot" style="background:var(--accent)"></span> My Tasks</h3>
+        <div id="taskList"></div>
+      </div>
+    </section>
+
+    <!-- NOTES -->
+    <section class="section" id="notes">
+      <div class="card">
+        <h3><span class="dot"></span> New Note</h3>
+        <label>Title</label>
+        <input type="text" id="nTitle" placeholder="Lecture 5 — Binary Trees"/>
+        <label style="margin-top:10px">Content</label>
+        <textarea id="nBody" placeholder="Write your notes here..."></textarea>
+        <button class="btn" id="nAdd" style="margin-top:12px">Save Note</button>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h3><span class="dot" style="background:var(--primary-2)"></span> Saved Notes</h3>
+        <div id="noteList"></div>
+      </div>
+    </section>
+
+    <!-- GPA -->
+    <section class="section" id="gpa">
+      <div class="card">
+        <h3><span class="dot"></span> GPA / CGPA Calculator</h3>
+        <div id="gpaRows"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn ghost" id="gpaAdd">+ Add Course</button>
+          <button class="btn" id="gpaCalc">Calculate</button>
+        </div>
+        <div class="gpa-result" id="gpaResult" style="display:none">
+          <div style="color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:2px">Your GPA</div>
+          <div class="big" id="gpaVal">0.00</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:4px" id="gpaSub"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIMETABLE -->
+    <section class="section" id="tt">
+      <div class="card">
+        <h3><span class="dot"></span> Weekly Class Timetable</h3>
+        <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Click any cell to edit. Data is saved automatically.</p>
+        <div style="overflow-x:auto">
+          <div class="tt-grid" id="ttGrid"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ============ STORAGE HELPERS ============ */
+const LS = {
+  get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+};
+
+/* ============ THEME ============ */
+const themeBtn=document.getElementById('themeBtn');
+const savedTheme=LS.get('theme','dark');
+if(savedTheme==='light'){document.documentElement.setAttribute('data-theme','light');themeBtn.textContent='☀️'}
+themeBtn.onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme');
+  if(cur==='light'){
+    document.documentElement.removeAttribute('data-theme');
+    themeBtn.textContent='🌙';LS.set('theme','dark');
+  }else{
+    document.documentElement.setAttribute('data-theme','light');
+    themeBtn.textContent='☀️';LS.set('theme','light');
+  }
+};
+
+/* ============ NAV ============ */
+const sections=document.querySelectorAll('.section');
+const navBtns=document.querySelectorAll('.nav button');
+const pageTitle=document.getElementById('pageTitle');
+const titles={dashboard:'Dashboard',pomo:'Pomodoro Timer',tasks:'Assignments',notes:'Quick Notes',gpa:'GPA Calculator',tt:'Timetable'};
+navBtns.forEach(b=>b.onclick=()=>{
+  navBtns.forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  sections.forEach(s=>s.classList.remove('active'));
+  document.getElementById(b.dataset.sec).classList.add('active');
+  pageTitle.textContent=titles[b.dataset.sec];
+  if(window.innerWidth<=720){sidebar.classList.remove('open');overlay.classList.remove('show')}
+});
+
+/* ============ MOBILE MENU ============ */
+const sidebar=document.getElementById('sidebar');
+const overlay=document.getElementById('overlay');
+document.getElementById('menuBtn').onclick=()=>{sidebar.classList.toggle('open');overlay.classList.toggle('show')};
+overlay.onclick=()=>{sidebar.classList.remove('open');overlay.classList.remove('show')};
+
+/* ============ DATE ============ */
+document.getElementById('pageDate').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+/* ============ TASKS ============ */
+let tasks=LS.get('tasks',[]);
+function renderTasks(){
+  const list=document.getElementById('taskList');
+  if(!tasks.length){list.innerHTML='<p style="color:var(--muted);font-size:13px">No tasks yet.</p>';updateStats();return}
+  tasks.sort((a,b)=>{
+    if(a.done!==b.done)return a.done?1:-1;
+    return (a.date||'z').localeCompare(b.date||'z');
+  });
+  list.innerHTML=tasks.map((t,i)=>{
+    const pri=t.pri==='high'?'urgent':t.pri==='med'?'':'';
+    const due=t.date?new Date(t.date).toDateString():'No date';
+    const today=new Date();today.setHours(0,0,0,0);
+    const isOver=t.date && !t.done && new Date(t.date)<today;
+    return `<div class="task ${t.done?'done':''}">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i})"/>
+      <div class="t-info">
+        <div class="t-title">${escapeHtml(t.title)}</div>
+        <div class="t-meta">
+          ${t.subj?`<span>📚 ${escapeHtml(t.subj)}</span>`:''}
+          <span class="${isOver?'urgent':''}">📅 ${due}${isOver?' • OVERDUE':''}</span>
+          <span class="${pri}">${t.pri==='high'?'🔥 High':t.pri==='med'?'⚡ Medium':'🌱 Low'}</span>
+        </div>
+      </div>
+      <button class="t-del" onclick="delTask(${i})">✕</button>
+    </div>`;
+  }).join('');
+  updateStats();
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+window.toggleTask=i=>{tasks[i].done=!tasks[i].done;LS.set('tasks',tasks);renderTasks();renderUpcoming()};
+window.delTask=i=>{tasks.splice(i,1);LS.set('tasks',tasks);renderTasks();renderUpcoming()};
+document.getElementById('tAdd').onclick=()=>{
+  const title=document.getElementById('tTitle').value.trim();
+  if(!title){alert('Please enter a title');return}
+  tasks.push({
+    title,
+    subj:document.getElementById('tSubj').value.trim(),
+    date:document.getElementById('tDate').value,
+    pri:document.getElementById('tPri').value,
+    done:false
+  });
+  LS.set('tasks',tasks);
+  document.getElementById('tTitle').value='';
+  document.getElementById('tSubj').value='';
+  document.getElementById('tDate').value='';
+  renderTasks();renderUpcoming();
+};
+
+/* ============ NOTES ============ */
+let notes=LS.get('notes',[]);
+function renderNotes(){
+  const list=document.getElementById('noteList');
+  if(!notes.length){list.innerHTML='<p style="color:var(--muted);font-size:13px">No notes yet.</p>';updateStats();return}
+  list.innerHTML=notes.map((n,i)=>`
+    <div class="note">
+      <button class="x" onclick="delNote(${i})">✕</button>
+      <h4>${escapeHtml(n.title||'Untitled')}</h4>
+      <p>${escapeHtml(n.body)}</p>
+      <div class="meta">${new Date(n.ts).toLocaleString()}</div>
+    </div>
+  `).join('');
+  updateStats();
+}
+window.delNote=i=>{notes.splice(i,1);LS.set('notes',notes);renderNotes()};
+document.getElementById('nAdd').onclick=()=>{
+  const title=document.getElementById('nTitle').value.trim();
+  const body=document.getElementById('nBody').value.trim();
+  if(!body){alert('Write something first');return}
+  notes.unshift({title,body,ts:Date.now()});
+  LS.set('notes',notes);
+  document.getElementById('nTitle').value='';
+  document.getElementById('nBody').value='';
+  renderNotes();
+};
+
+/* ============ GPA ============ */
+const gradePoints={'A+':4.0,'A':4.0,'A-':3.7,'B+':3.3,'B':3.0,'B-':2.7,'C+':2.3,'C':2.0,'C-':1.7,'D':1.0,'F':0.0};
+let gpaCourses=LS.get('gpa',[{name:'',cr:3,gr:'A'}]);
+function renderGpa(){
+  const wrap=document.getElementById('gpaRows');
+  wrap.innerHTML=gpaCourses.map((c,i)=>`
+    <div class="gpa-row">
+      <input type="text" placeholder="Course name" value="${escapeHtml(c.name)}" oninput="gpaCourses[${i}].name=this.value;LS.set('gpa',gpaCourses)"/>
+      <input type="number" placeholder="Credits" value="${c.cr}" min="1" max="10" oninput="gpaCourses[${i}].cr=+this.value;LS.set('gpa',gpaCourses)"/>
+      <select onchange="gpaCourses[${i}].gr=this.value;LS.set('gpa',gpaCourses)">
+        ${Object.keys(gradePoints).map(g=>`<option ${c.gr===g?'selected':''}>${g}</option>`).join('')}
+      </select>
+      <button class="rm" onclick="gpaCourses.splice(${i},1);LS.set('gpa',gpaCourses);renderGpa()">✕</button>
+    </div>
+  `).join('');
+}
+document.getElementById('gpaAdd').onclick=()=>{gpaCourses.push({name:'',cr:3,gr:'A'});renderGpa()};
+document.getElementById('gpaCalc').onclick=()=>{
+  let totalPts=0,totalCr=0;
+  gpaCourses.forEach(c=>{
+    const cr=+c.cr||0;
+    const gp=gradePoints[c.gr]??0;
+    totalPts+=cr*gp;totalCr+=cr;
+  });
+  const gpa=totalCr?totalPts/totalCr:0;
+  document.getElementById('gpaResult').style.display='block';
+  document.getElementById('gpaVal').textContent=gpa.toFixed(2);
+  document.getElementById('gpaSub').textContent=`Total Credits: ${totalCr} • Quality Points: ${totalPts.toFixed(1)}`;
+  updateStats();
+};
+
+/* ============ TIMETABLE ============ */
+const days=['Mon','Tue','Wed','Thu','Fri'];
+const slots=['8:00','9:00','10:00','11:00','12:00','1:00','2:00','3:00','4:00'];
+let ttData=LS.get('tt',{});
+function renderTT(){
+  const g=document.getElementById('ttGrid');
+  let html='<div class="tt-cell tt-head">Time</div>';
+  days.forEach(d=>html+=`<div class="tt-cell tt-head">${d}</div>`);
+  slots.forEach(s=>{
+    html+=`<div class="tt-cell tt-time">${s}</div>`;
+    days.forEach(d=>{
+      const k=`${d}-${s}`;
+      html+=`<div class="tt-cell"><input value="${escapeHtml(ttData[k]||'')}" placeholder="—" oninput="ttData['${k}']=this.value;LS.set('tt',ttData)"/></div>`;
+    });
+  });
+  g.innerHTML=html;
+}
+
+/* ============ POMODORO ============ */
+let pomo={running:false,mode:'focus',left:25*60,total:25*60,interval:null};
+const pomoTime=document.getElementById('pomoTime');
+const pomoRing=document.getElementById('pomoRing');
+const pomoMode=document.getElementById('pomoMode');
+function fmt(s){const m=Math.floor(s/60),ss=s%60;return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`}
+function updatePomoUI(){
+  pomoTime.textContent=fmt(pomo.left);
+  const pct=(pomo.left/pomo.total)*100;
+  pomoRing.style.setProperty('--p',pct+'%');
+  pomoMode.textContent=pomo.mode==='focus'?'Focus':'Break';
+}
+document.getElementById('pomoStart').onclick=function(){
+  if(pomo.running){
+    clearInterval(pomo.interval);pomo.running=false;this.textContent='Start';
+  }else{
+    pomo.running=true;this.textContent='Pause';
+    pomo.interval=setInterval(()=>{
+      pomo.left--;
+      if(pomo.left<=0){
+        clearInterval(pomo.interval);pomo.running=false;
+        document.getElementById('pomoStart').textContent='Start';
+        if(pomo.mode==='focus'){
+          pomo.mode='break';
+          pomo.total=+document.getElementById('pomoBreak').value*60;
+        }else{
+          pomo.mode='focus';
+          pomo.total=+document.getElementById('pomoFocus').value*60;
+        }
+        pomo.left=pomo.total;
+        try{new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQ==').play()}catch{}
+        alert(pomo.mode==='focus'?'Break time! ☕':'Back to focus! 📚');
+      }
+      updatePomoUI();
+    },1000);
+  }
+};
+document.getElementById('pomoReset').onclick=()=>{
+  clearInterval(pomo.interval);pomo.running=false;
+  pomo.mode='focus';
+  pomo.total=+document.getElementById('pomoFocus').value*60;
+  pomo.left=pomo.total;
+  document.getElementById('pomoStart').textContent='Start';
+  updatePomoUI();
+};
+['pomoFocus','pomoBreak'].forEach(id=>{
+  document.getElementById(id).onchange=e=>{
+    if(!pomo.running){
+      pomo.total=+document.getElementById('pomoFocus').value*60;
+      pomo.left=pomo.total;updatePomoUI();
+    }
+  };
+});
+
+/* ============ DASHBOARD ============ */
+function updateStats(){
+  document.getElementById('stTasks').textContent=tasks.filter(t=>!t.done).length;
+  document.getElementById('stNotes').textContent=notes.length;
+  // compute last GPA if any
+  let totalPts=0,totalCr=0;
+  gpaCourses.forEach(c=>{const cr=+c.cr||0;totalPts+=cr*(gradePoints[c.gr]??0);totalCr+=cr});
+  document.getElementById('stGpa').textContent=totalCr?(totalPts/totalCr).toFixed(2):'—';
+}
+function renderUpcoming(){
+  const list=document.getElementById('upcomingList');
+  const upcoming=tasks.filter(t=>!t.done && t.date).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,4);
+  if(!upcoming.length){list.innerHTML='<p style="color:var(--muted);font-size:13px">No upcoming deadlines.</p>';return}
+  list.innerHTML=upcoming.map(t=>{
+    const d=new Date(t.date);
+    const diff=Math.ceil((d-new Date())/86400000);
+    return `<div class="task">
+      <div class="t-info">
+        <div class="t-title">${escapeHtml(t.title)}</div>
+        <div class="t-meta">
+          <span>📅 ${d.toLocaleDateString()}</span>
+          <span class="${diff<=2?'urgent':''}">${diff<0?'Overdue':diff===0?'Today':diff+' days left'}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============ TIPS ============ */
+const tips=[
+  "Use the Pomodoro technique: 25 min focus + 5 min break to stay sharp.",
+  "Review your notes within 24 hours of class — it boosts retention by 80%.",
+  "Break big assignments into tiny tasks. Small wins build momentum.",
+  "Sleep 7–8 hours. Your brain consolidates memory during sleep.",
+  "Teach a concept to a friend — if you can explain it simply, you've mastered it.",
+  "Drink water while studying. Dehydration drops concentration fast.",
+  "Silence notifications during deep work. One ping = 23 min to refocus.",
+  "Active recall > re-reading. Test yourself instead of just reviewing.",
+  "Plan tomorrow tonight. Wake up with a clear plan, not chaos.",
+  "Your GPA matters, but so does your mental health. Take breaks guilt-free."
+];
+function showTip(){document.getElementById('tipText').textContent=tips[Math.floor(Math.random()*tips.length)]}
+document.getElementById('newTip').onclick=showTip;
+
+/* ============ INIT ============ */
+renderTasks();
+renderNotes();
+renderGpa();
+renderTT();
+updatePomoUI();
+updateStats();
+renderUpcoming();
+showTip();
+</script>
+</body>
+</html>
